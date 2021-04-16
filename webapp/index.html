@@ -104,7 +104,7 @@
               }
             };
             request.send();
-          }, 2000);
+          }, 1000);
 
           window.setInterval(function () {
             // make a GET request to parse the GeoJSON at the url
@@ -120,22 +120,30 @@
               }
             };
             request.send();
-          }, 20000);
+          }, 5000);
           
           // Add a data source containing one point feature.
           map.addSource('device_pos', {type: 'geojson', data: url_device_pos});
           map.addSource('device_trail', {type: 'geojson', data: url_device_trail});
 
-          //// Load an image from an external URL.
-          //map.loadImage('https://upload.wikimedia.org/wikipedia/commons/7/7c/201408_cat.png', function (error, image) {
-          //  if (error) throw error;
-          //
-          //  // Add the image to the map style.
-          //  map.addImage('drone_image', image);
-          //  
-          //});
-          
           // Add a layer to use the image to represent the data.
+          map.addLayer({
+            'id': 'device_trail',
+            'type': 'circle',
+            'source': 'device_trail', // reference the data source
+            'paint': {
+              // make circles larger as the user zooms from z12 to z22
+              'circle-radius': {
+                'base': 1.75,
+                'stops': [
+                  [12, 3],
+                  [22, 50]
+                ]
+              },
+              'circle-color': '#00ff00'
+            }
+          });
+
           map.addLayer({
             'id': 'device_point',
             'type': 'circle',
@@ -149,24 +157,10 @@
                   [22, 50]
                 ]
               },
-              // color circles by ethnicity, using a match expression
-              // https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-match
               'circle-color': '#ff0000'
             }
           });
           
-          map.addLayer({
-            'id': 'device_trail',
-            'type': 'circle',
-            'source': 'device_trail', // reference the data source
-            'paint': {
-              // make circles larger as the user zooms from z12 to z22
-
-              // color circles by ethnicity, using a match expression
-              // https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-match
-              'circle-color': '#00ff00'
-            }
-          });
         });
       }
       
