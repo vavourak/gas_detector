@@ -1,0 +1,161 @@
+<!-- Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. -->
+<!-- SPDX-License-Identifier: MIT-0 -->
+<html>
+  <head>
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+      }
+
+      #map {
+        height: 100vh;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="map" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.784.0.min.js"></script>
+    <script src="https://unpkg.com/@aws-amplify/core@3.7.0/dist/aws-amplify-core.min.js"></script>
+    <script>
+      // use Signer from @aws-amplify/core
+      const { Signer } = window.aws_amplify_core;
+
+      // configuration
+      // Cognito Identity Pool ID
+      const identityPoolId = "us-east-1:db29c738-2705-4c4a-86db-6d10561cbf56";
+      // Amazon Location Service Map Name
+      const mapName = "Gas_Detector_Map";
+
+      // extract the region from the Identity Pool ID
+      AWS.config.region = identityPoolId.split(":")[0];
+
+      // instantiate a credential provider
+      const credentials = new AWS.CognitoIdentityCredentials({
+        IdentityPoolId: identityPoolId,
+      });
+
+      /**
+       * Sign requests made by Mapbox GL using AWS SigV4.
+       */
+      function transformRequest(url, resourceType) {
+        if (resourceType === "Style" && !url.includes("://")) {
+          // resolve to an AWS URL
+          url = `https://maps.geo.${AWS.config.region}.amazonaws.com/maps/v0/maps/${url}/style-descriptor`;
+        }
+
+        if (url.includes("amazonaws.com")) {
+          // only sign AWS requests (with the signature as part of the query string)
+          return {
+            url: Signer.signUrl(url, {
+              access_key: credentials.accessKeyId,
+              secret_key: credentials.secretAccessKey,
+              session_token: credentials.sessionToken,
+            }),
+          };
+        }
+
+        // don't sign
+        return { url };
+      }
+
+      /**
+       * Initialize a map.
+       */
+      async function initializeMap() {
+        // load credentials and set them up to refresh
+        await credentials.getPromise();
+
+        // actually initialize the map
+        const map = new mapboxgl.Map({
+          container: "map",
+          center: [-95.4575, 29.6940], // initial map centerpoint
+          zoom: 10, // initial map zoom
+          style: mapName,
+          transformRequest,
+        });
+
+        map.addControl(new mapboxgl.NavigationControl(), "top-left");
+        
+        
+        var url_device_pos = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location';
+        var url_device_trail = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location_History';
+        
+        map.on('load', function () {
+        
+          var request = new XMLHttpRequest();
+          
+          window.setInterval(function () {
+            // make a GET request to parse the GeoJSON at the url
+            request.open('GET', url_device_pos, true);
+            request.onload = function () {
+              if (this.status >= 200 && this.status < 400) {
+                // retrieve the JSON from the response
+                var json = JSON.parse(this.response);
+                //console.log(json.features)
+                
+                // update the drone symbol's location on the map
+                map.getSource('device_pos').setData(json);
+              }
+            };
+            request.send();
+          }, 2000);
+          
+          // Add a data source containing one point feature.
+          map.addSource('device_pos', {type: 'geojson', data: url_device_pos});
+          map.addSource('device_trail', {type: 'geojson', data: url_device_trail});
+
+          //// Load an image from an external URL.
+          //map.loadImage('https://upload.wikimedia.org/wikipedia/commons/7/7c/201408_cat.png', function (error, image) {
+          //  if (error) throw error;
+          //
+          //  // Add the image to the map style.
+          //  map.addImage('drone_image', image);
+          //  
+          //});
+          
+          // Add a layer to use the image to represent the data.
+          map.addLayer({
+            'id': 'device_point',
+            'type': 'circle',
+            'source': 'device_pos', // reference the data source
+            'paint': {
+              // make circles larger as the user zooms from z12 to z22
+              'circle-radius': {
+                'base': 1.75,
+                'stops': [
+                  [12, 3],
+                  [22, 50]
+                ]
+              },
+              // color circles by ethnicity, using a match expression
+              // https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-match
+              'circle-color': '#ff0000'
+            }
+          });
+          
+          map.addLayer({
+            'id': 'device_trail',
+            'type': 'circle',
+            'source': 'device_trail', // reference the data source
+            'paint': {
+              // make circles larger as the user zooms from z12 to z22
+
+              // color circles by ethnicity, using a match expression
+              // https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-match
+              'circle-color': '#00ff00'
+            }
+          });
+        });
+      }
+      
+
+      initializeMap();
+    </script>
+  </body>
+</html>
