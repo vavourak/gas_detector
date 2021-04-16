@@ -104,7 +104,7 @@
               }
             };
             request.send();
-          }, 1000);
+          }, 5000);
 
           window.setInterval(function () {
             // make a GET request to parse the GeoJSON at the url
@@ -128,7 +128,7 @@
 
           // Add a layer to use the image to represent the data.
           map.addLayer({
-            'id': 'device_trail',
+            'id': 'device_trail_layer',
             'type': 'circle',
             'source': 'device_trail', // reference the data source
             'paint': {
@@ -140,12 +140,20 @@
                   [22, 50]
                 ]
               },
-              'circle-color': '#00ff00'
+              'circle-color': [
+                'interpolate',
+                ['linear'],
+                ['get', 'gas_reading'],
+                100,
+                '#00FF00',
+                1000,
+                '#FF0000'
+              ]
             }
           });
 
           map.addLayer({
-            'id': 'device_point',
+            'id': 'device_pos_layer',
             'type': 'circle',
             'source': 'device_pos', // reference the data source
             'paint': {
