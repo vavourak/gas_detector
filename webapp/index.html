@@ -88,7 +88,8 @@
         
         map.on('load', function () {
         
-          var request = new XMLHttpRequest();
+          var request1 = new XMLHttpRequest();
+          var request2 = new XMLHttpRequest();
           
           // Add a data sources.
           map.addSource('device_pos', {type: 'geojson', data: url_device_pos});
@@ -97,8 +98,8 @@
 
           window.setInterval(function () {
             // make a GET request to parse the GeoJSON at the url
-            request.open('GET', url_device_pos, true);
-            request.onload = function () {
+            request1.open('GET', url_device_pos, true);
+            request1.onload = function () {
               if (this.status >= 200 && this.status < 400) {
                 // retrieve the JSON from the response
                 var json = JSON.parse(this.response);
@@ -108,11 +109,11 @@
                 map.getSource('device_pos').setData(json);
               }
             };
-            request.send();
+            request1.send();
 
             // make a GET request to parse the GeoJSON at the url
-            request.open('GET', url_device_trail, true);
-            request.onload = function () {
+            request2.open('GET', url_device_trail, true);
+            request2.onload = function () {
               if (this.status >= 200 && this.status < 400) {
                 // retrieve the JSON from the response
                 var json = JSON.parse(this.response);
@@ -122,7 +123,7 @@
                 map.getSource('device_trail').setData(json);
               }
             };
-            request.send();
+            request2.send();
           }, 5000);
 
 
