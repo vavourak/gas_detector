@@ -133,7 +133,15 @@
             'type': 'line',
             'source': 'device_trail', // reference the data source
             'paint': {
-              'line-color': [
+               make circles larger as the user zooms from z12 to z22
+              'circle-radius': {
+                'base': 1.75,
+                'stops': [
+                  [12, 3],
+                  [22, 50]
+                ]
+              },
+              'point-color': [
                 'interpolate',
                 ['linear'],
                 ['get', 'gas_reading'],
@@ -141,26 +149,7 @@
                 '#00FF00',
                 1000,
                 '#FF0000'
-              ],
-              'line-opacity': 0.75,
-              'line-width': 5
-              // make circles larger as the user zooms from z12 to z22
-              //'circle-radius': {
-              //  'base': 1.75,
-              //  'stops': [
-              //    [12, 3],
-              //    [22, 50]
-              //  ]
-              //},
-              //'point-color': [
-              //  'interpolate',
-              //  ['linear'],
-              //  ['get', 'gas_reading'],
-              //  100,
-              //  '#00FF00',
-              //  1000,
-              //  '#FF0000'
-              //]
+              ]
             }
           });
 
