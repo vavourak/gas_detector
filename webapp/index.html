@@ -85,6 +85,7 @@
         var url_device_pos = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location';
         var url_device_trail = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location_History';
         var url_device_trail_params = "duration=600"; // in seconds
+        url_device_trail = url_device_trail+"?"+url_device_trail_params;
         
         map.on('load', function () {
         
