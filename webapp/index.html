@@ -84,11 +84,13 @@
         
         var url_device_pos = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location';
         var url_device_trail = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location_History';
+        var url_device_trail_params = "duration=600"; // in seconds
         
         map.on('load', function () {
         
           var request1 = new XMLHttpRequest();
           var request2 = new XMLHttpRequest();
+          
           
           // Add a data sources.
           map.addSource('device_pos', {type: 'geojson', data: url_device_pos});
@@ -111,7 +113,7 @@
             request1.send();
 
             // make a GET request to parse the GeoJSON at the url
-            request2.open('GET', url_device_trail, true);
+            request2.open('GET', url_device_trail+"?"+url_device_trail_params, true);
             request2.onload = function () {
               if (this.status >= 200 && this.status < 400) {
                 // retrieve the JSON from the response
