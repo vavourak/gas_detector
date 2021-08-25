@@ -82,9 +82,9 @@
         map.addControl(new maplibregl.NavigationControl(), "top-left");
         
         
-        var url_device_pos = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location';
-        var url_device_trail = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location_History';
-        var url_device_trail_params = "duration=1200"; // in seconds
+        var url_device_pos = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location'; // URL for device locations
+        var url_device_trail = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location_History'; // URL for device trails
+        var url_device_trail_params = "duration=1200"; // How long trails should be in seconds since recorded
         url_device_trail = url_device_trail+"?"+url_device_trail_params;
         
         map.on('load', function () {
@@ -96,32 +96,30 @@
           // Add a data sources.
           map.addSource('device_pos', {type: 'geojson', data: url_device_pos});
           map.addSource('device_trail', {type: 'geojson', data: url_device_trail});
-
-
+          
+          // Repeating functions
           window.setInterval(function () {
-            // make a GET request to parse the GeoJSON at the url
+            // make a GET request to parse the GeoJSON from current device positions
             request1.open('GET', url_device_pos, true);
             request1.onload = function () {
               if (this.status >= 200 && this.status < 400) {
-                // retrieve the JSON from the response
                 var json = JSON.parse(this.response);
                 //console.log(json.features)
                 
-                // update the drone symbol's location on the map
+                // update the device symbols on the map
                 map.getSource('device_pos').setData(json);
               }
             };
             request1.send();
 
-            // make a GET request to parse the GeoJSON at the url
+            // make a GET request to parse the GeoJSON from the device trails
             request2.open('GET', url_device_trail, true);
             request2.onload = function () {
               if (this.status >= 200 && this.status < 400) {
-                // retrieve the JSON from the response
                 var json = JSON.parse(this.response);
                 //console.log(json.features)
                 
-                // update the drone symbol's location on the map
+                // update the device trails on the map
                 map.getSource('device_trail').setData(json);
               }
             };
@@ -129,7 +127,7 @@
           }, 5000);
 
 
-          // Add a layer to use the image to represent the data.
+          // Add a layer to represent the trail data.
           map.addLayer({
             'id': 'device_trail_layer',
             'type': 'circle',
@@ -155,6 +153,7 @@
             }
           });
 
+          // Add a layer to represent the device position data.
           map.addLayer({
             'id': 'device_pos_layer',
             'type': 'circle',
@@ -175,7 +174,6 @@
         });
       }
       
-
       initializeMap();
     </script>
   </body>
