@@ -15,166 +15,193 @@
       }
     </style>
   </head>
-
+  
   <body>
-    <div id="map" />
-    <script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
-    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.784.0.min.js"></script>
-    <script src="https://unpkg.com/@aws-amplify/core@3.7.0/dist/aws-amplify-core.min.js"></script>
-    <script>
-      // use Signer from @aws-amplify/core
-      const { Signer } = window.aws_amplify_core;
+    <table width = "100%" border = "0">
+      <tr>
+        <td colspan = "2" bgcolor = "IndianRed">
+          <center>
+            <h1>Personnel Hazard Tracking</h1>
+          </center>
+        </td>
+      </tr>
+      <tr valign = "top">
+        <td bgcolor = "#aaa" width = "50">
+          <b>Main Menu</b><br />
+          Link 1<br />
+          Link 2<br />
+          Link 3<br />
+        </td>
+            
+        <td bgcolor = "#eee" width = "100">
+            <div id="map" />
+            <script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
+            <script src="https://sdk.amazonaws.com/js/aws-sdk-2.784.0.min.js"></script>
+            <script src="https://unpkg.com/@aws-amplify/core@3.7.0/dist/aws-amplify-core.min.js"></script>
+            <script>
+              // use Signer from @aws-amplify/core
+              const { Signer } = window.aws_amplify_core;
 
-      // configuration
-      // Cognito Identity Pool ID
-      const identityPoolId = "us-east-1:db29c738-2705-4c4a-86db-6d10561cbf56";
-      // Amazon Location Service Map Name
-      const mapName = "Gas_Detector_Map";
+              // configuration
+              // Cognito Identity Pool ID
+              const identityPoolId = "us-east-1:db29c738-2705-4c4a-86db-6d10561cbf56";
+              // Amazon Location Service Map Name
+              const mapName = "Gas_Detector_Map";
 
-      // extract the region from the Identity Pool ID
-      AWS.config.region = identityPoolId.split(":")[0];
+              // extract the region from the Identity Pool ID
+              AWS.config.region = identityPoolId.split(":")[0];
 
-      // instantiate a credential provider
-      const credentials = new AWS.CognitoIdentityCredentials({
-        IdentityPoolId: identityPoolId,
-      });
+              // instantiate a credential provider
+              const credentials = new AWS.CognitoIdentityCredentials({
+                IdentityPoolId: identityPoolId,
+              });
 
-      /**
-       * Sign requests made by Mapbox GL using AWS SigV4.
-       */
-      function transformRequest(url, resourceType) {
-        if (resourceType === "Style" && !url.includes("://")) {
-          // resolve to an AWS URL
-          url = `https://maps.geo.${AWS.config.region}.amazonaws.com/maps/v0/maps/${url}/style-descriptor`;
-        }
+              /**
+               * Sign requests made by Mapbox GL using AWS SigV4.
+               */
+              function transformRequest(url, resourceType) {
+                if (resourceType === "Style" && !url.includes("://")) {
+                  // resolve to an AWS URL
+                  url = `https://maps.geo.${AWS.config.region}.amazonaws.com/maps/v0/maps/${url}/style-descriptor`;
+                }
 
-        if (url.includes("amazonaws.com")) {
-          // only sign AWS requests (with the signature as part of the query string)
-          return {
-            url: Signer.signUrl(url, {
-              access_key: credentials.accessKeyId,
-              secret_key: credentials.secretAccessKey,
-              session_token: credentials.sessionToken,
-            }),
-          };
-        }
+                if (url.includes("amazonaws.com")) {
+                  // only sign AWS requests (with the signature as part of the query string)
+                  return {
+                    url: Signer.signUrl(url, {
+                      access_key: credentials.accessKeyId,
+                      secret_key: credentials.secretAccessKey,
+                      session_token: credentials.sessionToken,
+                    }),
+                  };
+                }
 
-        // don't sign
-        return { url };
-      }
-
-      /**
-       * Initialize a map.
-       */
-      async function initializeMap() {
-        // load credentials and set them up to refresh
-        await credentials.getPromise();
-
-        // actually initialize the map
-        const map = new maplibregl.Map({
-          container: "map",
-          center: [-95.23145, 29.71951], // initial map centerpoint
-          zoom: 16, // initial map zoom
-          style: mapName,
-          transformRequest,
-        });
-
-        map.addControl(new maplibregl.NavigationControl(), "top-left");
-        
-        
-        var url_device_pos = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location'; // URL for device locations
-        var url_device_trail = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location_History'; // URL for device trails
-        var url_device_trail_params = "duration=1200"; // How long trails should be in seconds since recorded
-        url_device_trail = url_device_trail+"?"+url_device_trail_params;
-        
-        map.on('load', function () {
-        
-          var request1 = new XMLHttpRequest();
-          var request2 = new XMLHttpRequest();
-          
-          
-          // Add a data sources.
-          map.addSource('device_pos', {type: 'geojson', data: url_device_pos});
-          map.addSource('device_trail', {type: 'geojson', data: url_device_trail});
-          
-          // Repeating functions
-          window.setInterval(function () {
-            // make a GET request to parse the GeoJSON from current device positions
-            request1.open('GET', url_device_pos, true);
-            request1.onload = function () {
-              if (this.status >= 200 && this.status < 400) {
-                var json = JSON.parse(this.response);
-                //console.log(json.features)
-                
-                // update the device symbols on the map
-                map.getSource('device_pos').setData(json);
+                // don't sign
+                return { url };
               }
-            };
-            request1.send();
 
-            // make a GET request to parse the GeoJSON from the device trails
-            request2.open('GET', url_device_trail, true);
-            request2.onload = function () {
-              if (this.status >= 200 && this.status < 400) {
-                var json = JSON.parse(this.response);
-                //console.log(json.features)
+              /**
+               * Initialize a map.
+               */
+              async function initializeMap() {
+                // load credentials and set them up to refresh
+                await credentials.getPromise();
+
+                // actually initialize the map
+                const map = new maplibregl.Map({
+                  container: "map",
+                  center: [-95.23145, 29.71951], // initial map centerpoint
+                  zoom: 16, // initial map zoom
+                  style: mapName,
+                  transformRequest,
+                });
+
+                map.addControl(new maplibregl.NavigationControl(), "top-left");
                 
-                // update the device trails on the map
-                map.getSource('device_trail').setData(json);
+                
+                var url_device_pos = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location'; // URL for device locations
+                var url_device_trail = 'https://aoq7a2dhy5.execute-api.us-east-1.amazonaws.com/Gas_Detector_Get_Location_History'; // URL for device trails
+                var url_device_trail_params = "duration=1200"; // How long trails should be in seconds since recorded
+                url_device_trail = url_device_trail+"?"+url_device_trail_params;
+                
+                map.on('load', function () {
+                
+                  var request1 = new XMLHttpRequest();
+                  var request2 = new XMLHttpRequest();
+                  
+                  
+                  // Add a data sources.
+                  map.addSource('device_pos', {type: 'geojson', data: url_device_pos});
+                  map.addSource('device_trail', {type: 'geojson', data: url_device_trail});
+                  
+                  // Repeating functions
+                  window.setInterval(function () {
+                    // make a GET request to parse the GeoJSON from current device positions
+                    request1.open('GET', url_device_pos, true);
+                    request1.onload = function () {
+                      if (this.status >= 200 && this.status < 400) {
+                        var json = JSON.parse(this.response);
+                        //console.log(json.features)
+                        
+                        // update the device symbols on the map
+                        map.getSource('device_pos').setData(json);
+                      }
+                    };
+                    request1.send();
+
+                    // make a GET request to parse the GeoJSON from the device trails
+                    request2.open('GET', url_device_trail, true);
+                    request2.onload = function () {
+                      if (this.status >= 200 && this.status < 400) {
+                        var json = JSON.parse(this.response);
+                        //console.log(json.features)
+                        
+                        // update the device trails on the map
+                        map.getSource('device_trail').setData(json);
+                      }
+                    };
+                    request2.send();
+                  }, 5000);
+
+
+                  // Add a layer to represent the trail data.
+                  map.addLayer({
+                    'id': 'device_trail_layer',
+                    'type': 'circle',
+                    'source': 'device_trail', // reference the data source
+                    'paint': {
+                      // make circles larger as the user zooms from z12 to z22
+                      'circle-radius': {
+                        'base': 1.75,
+                        'stops': [
+                          [12, 3],
+                          [22, 50]
+                        ]
+                      },
+                      'circle-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['get', 'gas_reading'],
+                        100,
+                        '#00FF00',
+                        1000,
+                        '#FF0000'
+                      ]
+                    }
+                  });
+
+                  // Add a layer to represent the device position data.
+                  map.addLayer({
+                    'id': 'device_pos_layer',
+                    'type': 'circle',
+                    'source': 'device_pos', // reference the data source
+                    'paint': {
+                      // make circles larger as the user zooms from z12 to z22
+                      'circle-radius': {
+                        'base': 1.75,
+                        'stops': [
+                          [12, 3],
+                          [22, 50]
+                        ]
+                      },
+                      'circle-color': '#0000FF'
+                    }
+                  });
+                  
+                });
               }
-            };
-            request2.send();
-          }, 5000);
-
-
-          // Add a layer to represent the trail data.
-          map.addLayer({
-            'id': 'device_trail_layer',
-            'type': 'circle',
-            'source': 'device_trail', // reference the data source
-            'paint': {
-              // make circles larger as the user zooms from z12 to z22
-              'circle-radius': {
-                'base': 1.75,
-                'stops': [
-                  [12, 3],
-                  [22, 50]
-                ]
-              },
-              'circle-color': [
-                'interpolate',
-                ['linear'],
-                ['get', 'gas_reading'],
-                100,
-                '#00FF00',
-                1000,
-                '#FF0000'
-              ]
-            }
-          });
-
-          // Add a layer to represent the device position data.
-          map.addLayer({
-            'id': 'device_pos_layer',
-            'type': 'circle',
-            'source': 'device_pos', // reference the data source
-            'paint': {
-              // make circles larger as the user zooms from z12 to z22
-              'circle-radius': {
-                'base': 1.75,
-                'stops': [
-                  [12, 3],
-                  [22, 50]
-                ]
-              },
-              'circle-color': '#0000FF'
-            }
-          });
-          
-        });
-      }
-      
-      initializeMap();
-    </script>
+              
+              initializeMap();
+            </script>
+        </td>
+      </tr>
+      <tr valign = "bottom">
+        <td colspan = "2" bgcolor = "#b5dcb3">
+          <center>
+            Copyright © 2021 Constantine Vavourakis
+          </center>
+        </td>
+      </tr>         
+    </table>
   </body>
 </html>
